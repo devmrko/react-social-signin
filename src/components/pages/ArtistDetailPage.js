@@ -69,6 +69,30 @@ const ArtistDetailPage = () => {
         }
     }, [artistId]);
 
+    const renderArtistButtons = (artistName) => {
+        const artists = artistName.split(/(?:Featuring|Feat\.|\s+&\s+|,\s+)/i)
+          .map(name => name.trim())
+          .filter(name => name.length > 0);
+    
+        return (
+          <div className="d-flex flex-wrap gap-1">
+            {artists.map((artist, index) => (
+              <button
+                key={index}
+                onClick={() => {
+          setSelectedArtist(null)
+                  navigate(`/artist/${artist}`);
+                }}
+                className="btn btn-sm btn-outline-secondary"
+                style={{ fontSize: '0.9rem' }}
+              >
+                {artist}
+              </button>
+            ))}
+          </div>
+        );
+      };
+
     const sortData = (items, sortConfig) => {
         if (!sortConfig.key) return items;
 
@@ -301,7 +325,7 @@ const ArtistDetailPage = () => {
                                                 {item.SONG_NAME}
                                             </a>
                                         </td>
-                                        <td>{item.ARTIST_NAME}</td>
+                                        <td>{renderArtistButtons(item.ARTIST_NAME)}</td>
                                         <td>{item.SCORE}</td>
                                         <td>{item.AVERAGE_RANK}</td>
                                         <td>{item.COUNT}</td>

@@ -47,6 +47,32 @@ const ArtistDetailPage = () => {
     const [loadingArtists, setLoadingArtists] = useState(false);
     const [selectedArtist, setSelectedArtist] = useState(null);
 
+    const [similarArtists, setSimilarArtists] = useState([]);
+    const [loadingSimilarArtists, setLoadingSimilarArtists] = useState(false);
+
+    const fetchSimilarArtists = async (name) => {
+        if (!name) return;
+        
+        setLoadingSimilarArtists(true);
+        try {
+          const result = await fetchData('/similarArtists', { artistName: name });
+          
+          const validArtists = Array.isArray(result) 
+            ? result.filter(artist => 
+                artist && typeof artist === 'string' && artist.length > 0
+              )
+            : [];
+          
+          setSimilarArtists(validArtists);
+        } catch (error) {
+          console.error('Error fetching similar artists:', error);
+          setSimilarArtists([]);
+        } finally {
+          setLoadingSimilarArtists(false);
+        }
+      };
+
+
     useEffect(() => {
         const loadArtistData = async () => {
             try {
@@ -58,6 +84,8 @@ const ArtistDetailPage = () => {
                     // Fetch related artists when we get the artist name
                     // fetchRelatedArtists(result[0].ARTIST_NAME);
                     fetchRelatedArtists(artistId);
+
+                    fetchSimilarArtists(artistId);
                 }
             } catch (error) {
                 console.error('Error fetching artist data:', error);
@@ -274,6 +302,46 @@ const ArtistDetailPage = () => {
                     )}
                 </div>
             </div>
+
+
+
+
+{/* Similar Artists Section */}
+<div className="card mt-4">
+        <div className="card-header">
+          <h3 className="h5 mb-0">Similar Artists</h3>
+        </div>
+        <div className="card-body">
+          {loadingSimilarArtists ? (
+            <div className="text-center p-3">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          ) : similarArtists?.length > 0 ? (
+            <>
+              <p className="text-muted">
+                {similarArtists.length} similar artist{similarArtists.length !== 1 ? 's' : ''} found
+              </p>
+              <div className="d-flex flex-wrap gap-2">
+                {similarArtists.map((artistName, index) => (
+                  <span
+                    key={`${artistName}-${index}`}
+                    className="badge bg-info text-dark p-2"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => navigate(`/artist/${artistName}`)}
+                  >
+                    {artistName}
+                  </span>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="text-muted">No similar artists found</p>
+          )}
+        </div>
+      </div>
+
 
 
 

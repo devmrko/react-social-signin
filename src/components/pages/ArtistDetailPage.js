@@ -243,6 +243,9 @@ const ArtistDetailPage = () => {
                                 <th onClick={() => requestSort('SONG_NAME')} style={{ cursor: 'pointer' }}>
                                     Song Name {getSortIcon('SONG_NAME')}
                                 </th>
+                                <th onClick={() => requestSort('ARTIST_NAME')} style={{ cursor: 'pointer' }}>
+                                    Artist Name {getSortIcon('ARTIST_NAME')}
+                                </th>
                                 <th onClick={() => requestSort('SCORE')} style={{ cursor: 'pointer' }}>
                                     Score {getSortIcon('SCORE')}
                                 </th>
@@ -271,6 +274,7 @@ const ArtistDetailPage = () => {
                                             {item.SONG_NAME}
                                         </a>
                                     </td>
+                                    <td>{item.ARTIST_NAME}</td>
                                     <td>{item.SCORE}</td>
                                     <td>{item.AVERAGE_RANK}</td>
                                     <td>{item.COUNT}</td>

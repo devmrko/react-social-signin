@@ -45,6 +45,7 @@ const ArtistDetailPage = () => {
 
     const [relatedArtists, setRelatedArtists] = useState([]);
     const [loadingArtists, setLoadingArtists] = useState(false);
+    const [selectedArtist, setSelectedArtist] = useState(null);
 
     useEffect(() => {
         const loadArtistData = async () => {
@@ -129,10 +130,13 @@ const ArtistDetailPage = () => {
         return colors[Math.floor(Math.random() * colors.length)];
     };
 
-    const handleArtistTagClick = (artistName) => {
-        // You might want to implement navigation to that artist's page
-        // This depends on how your routing is set up
-        console.log('Clicked artist:', artistName);
+    const handleArtistTagClick = (clickedArtistName) => {
+        // Toggle selection: if same artist clicked, clear filter
+        setSelectedArtist(prevArtist => 
+            prevArtist === clickedArtistName ? null : clickedArtistName
+        );
+        // Reset to first page when filtering
+        setActivePage(1);
     };
 
     const requestSort = (key) => {
@@ -153,10 +157,16 @@ const ArtistDetailPage = () => {
             : <i className="bi bi-arrow-up"></i>;
     };
 
-    const sortedData = sortData(data, sortConfig);
+    const filteredData = React.useMemo(() => {
+        if (!selectedArtist) return data;
+        return data.filter(item => 
+            item.ARTIST_NAME && item.ARTIST_NAME.includes(selectedArtist)
+        );
+    }, [data, selectedArtist]);
+
     const indexOfLastItem = activePage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = sortedData.slice(indexOfFirstItem, indexOfLastItem);
+    const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
 
     const handlePageChange = (pageNumber) => {
         setActivePage(pageNumber);
@@ -207,18 +217,28 @@ const ArtistDetailPage = () => {
                         <>
                             <p className="text-muted">
                                 {relatedArtists.length} artist{relatedArtists.length !== 1 ? 's' : ''} found
+                                {selectedArtist && (
+                                    <button 
+                                        className="btn btn-link btn-sm ms-2"
+                                        onClick={() => setSelectedArtist(null)}
+                                    >
+                                        Clear filter
+                                    </button>
+                                )}
                             </p>
                             <div className="d-flex flex-wrap gap-2">
                                 {relatedArtists.map((artist, index) => {
                                     if (!artist?.ARTIST_NAME) return null;
+                                    const isSelected = selectedArtist === artist.ARTIST_NAME;
                                     return (
                                         <span
                                             key={`${artist.ARTIST_NAME}-${index}`}
-                                            className="badge bg-primary text-white p-2 cursor-pointer"
+                                            className={`badge ${isSelected ? 'bg-success' : 'bg-primary'} text-white p-2`}
                                             style={{ cursor: 'pointer' }}
                                             onClick={() => handleArtistTagClick(artist.ARTIST_NAME)}
                                         >
                                             {artist.ARTIST_NAME}
+                                            {isSelected && ' ✓'}
                                         </span>
                                     );
                                 })}
@@ -233,87 +253,96 @@ const ArtistDetailPage = () => {
 
 
             {currentItems.length > 0 ? (
-                <div className="table-responsive">
-                    <table className="table table-striped table-hover">
-                        <thead className="table-dark">
-                            <tr>
-                                <th onClick={() => requestSort('CHART_DATE')} style={{ cursor: 'pointer' }}>
-                                    Chart Date {getSortIcon('CHART_DATE')}
-                                </th>
-                                <th onClick={() => requestSort('SONG_NAME')} style={{ cursor: 'pointer' }}>
-                                    Song Name {getSortIcon('SONG_NAME')}
-                                </th>
-                                <th onClick={() => requestSort('ARTIST_NAME')} style={{ cursor: 'pointer' }}>
-                                    Artist Name {getSortIcon('ARTIST_NAME')}
-                                </th>
-                                <th onClick={() => requestSort('SCORE')} style={{ cursor: 'pointer' }}>
-                                    Score {getSortIcon('SCORE')}
-                                </th>
-                                <th onClick={() => requestSort('AVERAGE_RANK')} style={{ cursor: 'pointer' }}>
-                                    Average Rank {getSortIcon('AVERAGE_RANK')}
-                                </th>
-                                <th onClick={() => requestSort('COUNT')} style={{ cursor: 'pointer' }}>
-                                    Count {getSortIcon('COUNT')}
-                                </th>
-                                <th style={{ width: '200px' }}>Links</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {currentItems.map((item) => (
-                                <tr key={`${item.SONG_ID}-${item.CHART_DATE}`}>
-                                    <td>{new Date(item.CHART_DATE).toLocaleDateString()}</td>
-                                    <td>
-                                        <a
-                                            href="#"
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                navigate(`/song/${item.SONG_ID}`);
-                                            }}
-                                            className="text-decoration-none"
-                                        >
-                                            {item.SONG_NAME}
-                                        </a>
-                                    </td>
-                                    <td>{item.ARTIST_NAME}</td>
-                                    <td>{item.SCORE}</td>
-                                    <td>{item.AVERAGE_RANK}</td>
-                                    <td>{item.COUNT}</td>
-                                    <td>
-                                        <div className="d-flex gap-1">
-                                            <a
-                                                href={getYoutubeSearchUrl(item.SONG_NAME, item.ARTIST_NAME)}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="btn btn-sm btn-outline-danger"
-                                                style={{ fontSize: '0.9rem' }}
-                                            >
-                                                <i className="bi bi-youtube"></i> Video
-                                            </a>
-                                            <a
-                                                href={getGeniusSearchUrl(item.SONG_NAME, item.ARTIST_NAME)}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="btn btn-sm btn-outline-dark"
-                                                style={{ fontSize: '0.9rem' }}
-                                            >
-                                                <i className="bi bi-file-text"></i> Lyrics
-                                            </a>
-                                        </div>
-                                    </td>
+                <>
+                    {selectedArtist && (
+                        <div className="alert alert-info mt-3">
+                            Showing songs featuring: {selectedArtist}
+                        </div>
+                    )}
+                    <div className="table-responsive">
+                        <table className="table table-striped table-hover">
+                            <thead className="table-dark">
+                                <tr>
+                                    <th onClick={() => requestSort('CHART_DATE')} style={{ cursor: 'pointer' }}>
+                                        Chart Date {getSortIcon('CHART_DATE')}
+                                    </th>
+                                    <th onClick={() => requestSort('SONG_NAME')} style={{ cursor: 'pointer' }}>
+                                        Song Name {getSortIcon('SONG_NAME')}
+                                    </th>
+                                    <th onClick={() => requestSort('ARTIST_NAME')} style={{ cursor: 'pointer' }}>
+                                        Artist Name {getSortIcon('ARTIST_NAME')}
+                                    </th>
+                                    <th onClick={() => requestSort('SCORE')} style={{ cursor: 'pointer' }}>
+                                        Score {getSortIcon('SCORE')}
+                                    </th>
+                                    <th onClick={() => requestSort('AVERAGE_RANK')} style={{ cursor: 'pointer' }}>
+                                        Average Rank {getSortIcon('AVERAGE_RANK')}
+                                    </th>
+                                    <th onClick={() => requestSort('COUNT')} style={{ cursor: 'pointer' }}>
+                                        Count {getSortIcon('COUNT')}
+                                    </th>
+                                    <th style={{ width: '200px' }}>Links</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody>
+                                {currentItems.map((item) => (
+                                    <tr key={`${item.SONG_ID}-${item.CHART_DATE}`}>
+                                        <td>{new Date(item.CHART_DATE).toLocaleDateString()}</td>
+                                        <td>
+                                            <a
+                                                href="#"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    navigate(`/song/${item.SONG_ID}`);
+                                                }}
+                                                className="text-decoration-none"
+                                            >
+                                                {item.SONG_NAME}
+                                            </a>
+                                        </td>
+                                        <td>{item.ARTIST_NAME}</td>
+                                        <td>{item.SCORE}</td>
+                                        <td>{item.AVERAGE_RANK}</td>
+                                        <td>{item.COUNT}</td>
+                                        <td>
+                                            <div className="d-flex gap-1">
+                                                <a
+                                                    href={getYoutubeSearchUrl(item.SONG_NAME, item.ARTIST_NAME)}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="btn btn-sm btn-outline-danger"
+                                                    style={{ fontSize: '0.9rem' }}
+                                                >
+                                                    <i className="bi bi-youtube"></i> Video
+                                                </a>
+                                                <a
+                                                    href={getGeniusSearchUrl(item.SONG_NAME, item.ARTIST_NAME)}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="btn btn-sm btn-outline-dark"
+                                                    style={{ fontSize: '0.9rem' }}
+                                                >
+                                                    <i className="bi bi-file-text"></i> Lyrics
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </>
             ) : (
-                <div className="alert alert-info">Loading data...</div>
+                <div className="alert alert-info">
+                    {selectedArtist ? 'No songs found for selected artist' : 'Loading data...'}
+                </div>
             )}
 
             <div className="d-flex justify-content-center mt-4">
                 <Pagination
                     activePage={activePage}
                     itemsCountPerPage={itemsPerPage}
-                    totalItemsCount={data.length}
+                    totalItemsCount={filteredData.length}
                     pageRangeDisplayed={5}
                     onChange={handlePageChange}
                     itemClass="page-item"

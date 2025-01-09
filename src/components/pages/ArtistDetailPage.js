@@ -73,13 +73,15 @@ const ArtistDetailPage = () => {
         if (!sortConfig.key) return items;
 
         return [...items].sort((a, b) => {
+            if (!a || !b) return 0;
+
             if (sortConfig.key === 'CHART_DATE') {
                 return sortConfig.direction === 'asc'
                     ? new Date(a[sortConfig.key]) - new Date(b[sortConfig.key])
                     : new Date(b[sortConfig.key]) - new Date(a[sortConfig.key]);
             }
 
-            if (sortConfig.key === 'SCORE') {
+            if (['SCORE', 'AVERAGE_RANK', 'COUNT'].includes(sortConfig.key)) {
                 const aValue = Number(a[sortConfig.key]) || 0;
                 const bValue = Number(b[sortConfig.key]) || 0;
                 return sortConfig.direction === 'asc'
@@ -87,15 +89,12 @@ const ArtistDetailPage = () => {
                     : bValue - aValue;
             }
 
-            if (typeof a[sortConfig.key] === 'number') {
-                return sortConfig.direction === 'asc'
-                    ? a[sortConfig.key] - b[sortConfig.key]
-                    : b[sortConfig.key] - a[sortConfig.key];
-            }
-
+            // For string values (SONG_NAME, ARTIST_NAME)
+            const aValue = String(a[sortConfig.key] || '');
+            const bValue = String(b[sortConfig.key] || '');
             return sortConfig.direction === 'asc'
-                ? String(a[sortConfig.key]).localeCompare(String(b[sortConfig.key]))
-                : String(b[sortConfig.key]).localeCompare(String(a[sortConfig.key]));
+                ? aValue.localeCompare(bValue)
+                : bValue.localeCompare(aValue);
         });
     };
 
@@ -145,7 +144,7 @@ const ArtistDetailPage = () => {
             direction = 'desc';
         }
         setSortConfig({ key, direction });
-        setActivePage(1);
+        setActivePage(1); // Reset to first page when sorting
     };
 
     const getSortIcon = (columnName) => {
@@ -157,16 +156,18 @@ const ArtistDetailPage = () => {
             : <i className="bi bi-arrow-up"></i>;
     };
 
-    const filteredData = React.useMemo(() => {
-        if (!selectedArtist) return data;
-        return data.filter(item => 
-            item.ARTIST_NAME && item.ARTIST_NAME.includes(selectedArtist)
-        );
-    }, [data, selectedArtist]);
+    const sortedAndFilteredData = React.useMemo(() => {
+        let filteredData = selectedArtist
+            ? data.filter(item => item.ARTIST_NAME && item.ARTIST_NAME.includes(selectedArtist))
+            : data;
+        return sortData(filteredData, sortConfig);
+    }, [data, selectedArtist, sortConfig]);
 
-    const indexOfLastItem = activePage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
+    const currentItems = React.useMemo(() => {
+        const indexOfLastItem = activePage * itemsPerPage;
+        const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+        return sortedAndFilteredData.slice(indexOfFirstItem, indexOfLastItem);
+    }, [sortedAndFilteredData, activePage, itemsPerPage]);
 
     const handlePageChange = (pageNumber) => {
         setActivePage(pageNumber);
@@ -342,7 +343,7 @@ const ArtistDetailPage = () => {
                 <Pagination
                     activePage={activePage}
                     itemsCountPerPage={itemsPerPage}
-                    totalItemsCount={filteredData.length}
+                    totalItemsCount={sortedAndFilteredData.length}
                     pageRangeDisplayed={5}
                     onChange={handlePageChange}
                     itemClass="page-item"

@@ -70,7 +70,7 @@ const ArtistDetailPage = () => {
     }, [artistId]);
 
     const renderArtistButtons = (artistName) => {
-        const artists = artistName.split(/(?:Featuring|Feat\.|\s+&\s+|,\s+)/i)
+        const artists = artistName.split(/(?:Featuring|Feat\.|\s*\+\s*|\s+&\s+|,\s+|(?:Duet(?:\s+With)?)|(?:With)|(?:\s+[Aa]nd\s+))/i)
           .map(name => name.trim())
           .filter(name => name.length > 0);
     

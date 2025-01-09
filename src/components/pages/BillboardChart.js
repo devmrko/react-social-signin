@@ -135,7 +135,7 @@ const BillboardChart = () => {
               key={index}
               onClick={() => {
                 localStorage.setItem('selectedYear', selectedYear);
-                navigate(`/artist/${artistId}`);
+                navigate(`/artist/${artist}`);
               }}
               className="btn btn-sm btn-outline-secondary"
               style={{ fontSize: '0.9rem' }}

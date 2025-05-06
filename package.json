@@ -4,6 +4,9 @@
   "private": true,
   "dependencies": {
     "@react-oauth/google": "^0.12.1",
+    "axios": "^1.9.0",
+    "antd": "^5.24.9",
+    "styled-components": "^6.1.17",
     "bootstrap": "^5.3.3",
     "crypto-browserify": "^3.12.1",
     "os-browserify": "^0.3.0",
